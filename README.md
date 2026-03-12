@@ -1,13 +1,23 @@
 # supply-freight-sql-analytics
-Título: SQL — Auditoria de fretes e OTIF (portfólio)
-Objetivo: Demonstrar análise de divergências de fatura (pagamentos indevidos) e cálculo de OTIF para logística.
-Base: Dados fictícios/anonimizados para portfólio (sem informações confidenciais).
+-- Query 1: Identificação de divergências / potenciais pagamentos indevidos
+SELECT 
+    id_frete,
+    transportadora,
+    valor_contratado,
+    valor_faturado,
+    (valor_faturado - valor_contratado) AS divergencia_rs,
+    ROUND(((valor_faturado / valor_contratado) - 1) * 100, 2) AS percentual_erro
+FROM tb_logistica_fretes
+WHERE valor_faturado > valor_contratado;
 
-O que tem aqui
-
-Query 1: identificação de divergências onde valor_faturado > valor_contratado
-Query 2: cálculo de OTIF por transportadora (entrega no prazo)
-Principais métricas
-
-Divergência (R$) e % erro por frete
-OTIF % por transportadora
+-- Query 2: Cálculo de OTIF (On-Time In-Full) por transportadora
+SELECT 
+    transportadora,
+    COUNT(id_frete) AS total_pedidos,
+    SUM(CASE WHEN dt_entrega_real <= dt_entrega_prevista THEN 1 ELSE 0 END) AS entregas_no_prazo,
+    ROUND(
+        SUM(CASE WHEN dt_entrega_real <= dt_entrega_prevista THEN 1 ELSE 0 END) * 100.0 
+        / COUNT(id_frete),
+    2) AS percentual_otif
+FROM tb_logistica_fretes
+GROUP BY transportadora;

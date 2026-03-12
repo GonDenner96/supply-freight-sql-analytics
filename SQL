@@ -1,0 +1,22 @@
+-- Query 1: Identificação de divergências / potenciais pagamentos indevidos
+SELECT 
+    id_frete,
+    transportadora,
+    valor_contratado,
+    valor_faturado,
+    (valor_faturado - valor_contratado) AS divergencia_rs,
+    ROUND(((valor_faturado / valor_contratado) - 1) * 100, 2) AS percentual_erro
+FROM tb_logistica_fretes
+WHERE valor_faturado > valor_contratado;
+
+-- Query 2: Cálculo de OTIF (On-Time In-Full) por transportadora
+SELECT 
+    transportadora,
+    COUNT(id_frete) AS total_pedidos,
+    SUM(CASE WHEN dt_entrega_real <= dt_entrega_prevista THEN 1 ELSE 0 END) AS entregas_no_prazo,
+    ROUND(
+        SUM(CASE WHEN dt_entrega_real <= dt_entrega_prevista THEN 1 ELSE 0 END) * 100.0 
+        / COUNT(id_frete),
+    2) AS percentual_otif
+FROM tb_logistica_fretes
+GROUP BY transportadora;
